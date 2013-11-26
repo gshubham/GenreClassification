@@ -91,8 +91,8 @@ class Song:
         
         for i in range(len(mfcc2d)):
             conf = confidences[i]
-            # if conf<.6:
-            #     continue
+            if conf<.6:
+                continue
             item = mfcc2d[i]
             confValues.append(conf)
             featureVectors.append(item)
@@ -120,8 +120,8 @@ class Song:
         start = f['analysis']['segments_start']
         for i in range(len(start)):
             conf = confidences[i]
-            # if conf<.6:
-            #     continue
+            if conf<.6:
+                continue
             startTimes.append(start[i])
         return startTimes
 
@@ -129,15 +129,20 @@ class Song:
         top5 = tags[:5]
         numjazz = 0
         numrock = 0
+        numhip = 0
+        numpop = 0
         for tag in top5:
             if 'rock' in tag:
                 numrock+=1
-            if 'jazz' in tag:
+            if 'hip hop' in tag:
+                numhip+=1
+            if 'pop' in tag:
+                numpop+=1
+            if 'jazz ' in tag:
                 numjazz+=1
-
         if numrock>=1 and numjazz==0:
             return 'rock'
-        if numjazz>=1 and numrock==0:
+        if numpop>=1 and numrock==0 and numjazz==0 and numhip==0:
             return 'jazz'
         return 'neither'
 
@@ -312,21 +317,17 @@ def getKLDivergence(meanVectorOne, meanVectorTwo, covarianceMatrixOne, covarianc
 
 def KMeans(allSongs, metalsongs, jazzsongs) :
     clusters = []
-    for i in range(0,8):
-        clusters.append(Centroid("Centroid1"))
-    # clusters.append(Centroid("Centroid2"))
-    for i in range(0,4):
-        clusters[i].addtoMeanVector(metalsongs[i].meanVector)
-        clusters[i].addtoCovarianceMatrix(metalsongs[i].covarianceMatrix)
-    for i in range(0,4):
-        clusters[i+4].addtoMeanVector(jazzsongs[i+1].meanVector)
-        clusters[i+4].addtoCovarianceMatrix(jazzsongs[i+1].covarianceMatrix)
+    clusters.append(Centroid("Centroid1"))
+    clusters.append(Centroid("Centroid2"))
+    clusters[0].addtoMeanVector(metalsongs[0].meanVector)
+    clusters[0].addtoCovarianceMatrix(metalsongs[0].covarianceMatrix)
+    clusters[1].addtoMeanVector(jazzsongs[1].meanVector)
+    clusters[1].addtoCovarianceMatrix(jazzsongs[1].covarianceMatrix)
     for iter in range(0, 200):
-        cumulative = [0,0,0,0,0,0,0,0]
+        cumulative = [0,0]
         newclusters = []
-        for i in range(0, 8):
-            newclusters.append(Centroid("Centroid1"))
-        # newclusters.append(Centroid("Centroid2"))
+        newclusters.append(Centroid("Centroid1"))
+        newclusters.append(Centroid("Centroid2"))
         for song in allSongs:
             distance = []
             for centroid in clusters:
@@ -334,7 +335,7 @@ def KMeans(allSongs, metalsongs, jazzsongs) :
                 y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
                 if(x != 1000 and y != 1000):
                     distance.append(x+y)
-            if(len(distance) == 8) :
+            if(len(distance) == 2) :
                 val, idx = min((val, idx) for (idx, val) in enumerate(distance))
                 cumulative[idx] += 1
                 newclusters[idx].addtoMeanVector(song.meanVector)
@@ -350,20 +351,20 @@ def KMeans(allSongs, metalsongs, jazzsongs) :
 
 def main():
 
-    numTotal = 100
+    # numTotal = 100
     numTrain = 85
-    inp = open('metalsongs_filter.pkl', 'rb')
+    inp = open('jazzsongs_filter.pkl', 'rb')
     metalsongs = pickle.load(inp)
     inp.close()
-    inp = open('jazzsongs_filter.pkl', 'rb')
+    inp = open('hiphopsongs_filter.pkl', 'rb')
     jazzsongs = pickle.load(inp)
     inp.close()
-    metalsongs, jazzsongs = getData(100)
     # metalsongs, jazzsongs = getData(100)
-    # output = open('rocksongs_nofilter.pkl', 'wb')
-    # pickle.dump(metalsongs, output)
+    # # metalsongs, jazzsongs = getData(100)
+    # output = open('popsongs_filter_new.pkl', 'wb')
+    # pickle.dump(jazzsongs, output)
     # output.close()
-    # output = open('jazzsongs_filter.pk1', 'wb')
+    # # output = open('jazzsongs_filter.pk1', 'wb')
     # pickle.dump(jazzsongs, output)
     # output.close()
 
@@ -385,7 +386,7 @@ def main():
             y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
             distance.append(x+y)
         val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 0  or idx == 1 or idx == 2 or idx == 3):
+        if(idx == 0):
             passedMetal +=1 
     print passedMetal
             
@@ -397,7 +398,7 @@ def main():
             y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
             distance.append(x+y)
         val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 4 or idx == 5 or idx == 6 or idx == 7):
+        if(idx == 1):
             passedJazz +=1 
     print passedJazz
 
