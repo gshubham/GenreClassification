@@ -5,7 +5,6 @@ from separate_train_test import separate_train_test
 
 SHOULD_WHITEN = True #always whiten for svms
 KERNEL_TYPE = 'linear'
-#INTERCEPT = 2
 
 '''
 Input your training data and get a trained SVM.
@@ -23,11 +22,7 @@ def getTrainedSVM(classes_train):
 
     songsvm = svm.SVC(kernel=KERNEL_TYPE)
     print "Kernel type: ", KERNEL_TYPE
-##    dec = songsvm.decision_function([[1]])
-##    print "shape should be 6. ", dec.shape[1]
-##    assert( dec.shape[1] == len(classes_train)*(len(classes_train)-1)/2)
     print songsvm
-    #songsvm = svm.LinearSVC()
     print "training svm on ", len(trainMatrix), " feature vectors."
     songsvm.fit(trainMatrix, labels)
     return songsvm
@@ -80,37 +75,6 @@ def getClassifierAccuracy(classes_test, classes_intervals, classifier, classific
         confusionMatrix.append(row)
                                      
     return confusionMatrix
-
-# def separate_trainTest(myclass, fraction_training, startEnd):
-#     num_train_songs = int(len(startEnd)*fraction_training)
-#     num_train_vectors = startEnd[num_train_songs][0]
-#     myclass_train = myclass[:num_train_vectors]
-#     myclass_test = myclass[num_train_vectors:]
-
-#     '''To update the intervals to be correct on the test set,
-#     1) only store those that are relevant to  the test set,
-#     2) Reduce all start, end points by num_train_vectors so they
-#     index properly into myclass_test. '''
-#     intervalsTest = startEnd[num_train_songs:]
-#     for i in range(len(intervalsTest)):
-#         intervalsTest[i][0]-=num_train_vectors
-#         intervalsTest[i][1]-=num_train_vectors
-        
-#     return myclass_train, myclass_test, intervalsTest
-
-# def whitenData(allGenresWindows):
-#     flatWindows = []
-#     for genreWindows in allGenresWindows:
-#         flatWindows+= genreWindows
-    
-#     whitened_features = whiten(np.array(flatWindows))
-#     allGenresWhitened = []
-#     start = 0
-#     for genreWindows in allGenresWindows:
-#         end = start + len(genreWindows)
-#         allGenresWhitened.append(whitened_features[start:end])
-#         start = end
-#     return allGenresWhitened
 
 def run_svm(allGenresWindows, allGenresStartEnd, fraction_training, classificationMethod):
     classes_train, classes_test, classes_intervals = separate_train_test(allGenresWindows, allGenresStartEnd, fraction_training, SHOULD_WHITEN)
