@@ -353,10 +353,10 @@ def main():
 
     # numTotal = 100
     numTrain = 85
-    inp = open('jazzsongs_filter.pkl', 'rb')
+    inp = open('hiphopsongs_nofilter.pkl', 'rb')
     metalsongs = pickle.load(inp)
     inp.close()
-    inp = open('hiphopsongs_filter.pkl', 'rb')
+    inp = open('popsongs_nofilter.pkl', 'rb')
     jazzsongs = pickle.load(inp)
     inp.close()
     # metalsongs, jazzsongs = getData(100)
