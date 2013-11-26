@@ -1,4 +1,5 @@
 import numpy
+import random
 
 '''
 Private function for this module, not needed for the user.
@@ -70,7 +71,7 @@ Each one is a vector of length twice that of a textureSegment. First first n ent
 the last n entries are the diagonals of the covariance matrix.
 '''
 
-def calculateTextureWindows(textureSegments, startTimes, windowLengthSeconds, useConfidences=False, confidences = []):
+def calculateTextureWindows(textureSegments, startTimes, windowLengthSeconds, random_fraction, useConfidences=False, confidences = []):
     numSegments = len(textureSegments)
     assert( len(textureSegments)==len(startTimes))
     assert( numSegments > 0), "No segments"
@@ -84,10 +85,32 @@ def calculateTextureWindows(textureSegments, startTimes, windowLengthSeconds, us
     windowStartIndex = 0
     windowEndIndex = getWindowEndIndex(windowStartIndex, windowStartIndex, startTimes, windowLengthSeconds)
     while( windowEndIndex != -1 ): #when false, you've gone past the end and are done.
-        mean, covDiag = calculateGaussianDiagonalCov(textureSegments[windowStartIndex:windowEndIndex]) #end not inclusive.
-        textureWindow = mean + covDiag
-        textureWindows.append(textureWindow)
+        if random.random()<random_fraction:
+            mean, covDiag = calculateGaussianDiagonalCov(textureSegments[windowStartIndex:windowEndIndex]) #end not inclusive.
+            textureWindow = mean + covDiag
+            textureWindows.append(textureWindow)
         windowStartIndex+=1
         windowEndIndex = getWindowEndIndex(windowStartIndex, windowEndIndex, startTimes, windowLengthSeconds)
         
     return textureWindows
+
+'''
+Same as calculateTextureWindows, but instead you randomly return some fraction of the segments (to reduce computational expense)
+And, iterate for all songs.
+'''
+def getAllTextureWindows(songs, windowLengthSeconds, random_fraction, useConfidences=False):
+    windows = []
+    startEnd = []
+    count = 0
+    for song in songs:
+        count+=1
+        if count%10==0:
+            print count
+        startIndex = len(windows) #the first one added will be at this index.
+        confidences = song.confidences if useConfidences else []
+        results = calculateTextureWindows(song.featureVectors, song.startTimes, windowLengthSeconds, random_fraction, useConfidences, confidences)
+        windows+=results
+        endIndex = len(windows) #the last one added is one before the index
+        startEnd.append([startIndex, endIndex])
+
+    return windows, startEnd
