@@ -1,7 +1,9 @@
 from sklearn import svm
 from scipy.cluster.vq import whiten
 import numpy as np
+from separate_train_test import separate_train_test
 
+SHOULD_WHITEN = True #always whiten for svms
 KERNEL_TYPE = 'linear'
 #INTERCEPT = 2
 
@@ -79,61 +81,39 @@ def getClassifierAccuracy(classes_test, classes_intervals, classifier, classific
                                      
     return confusionMatrix
 
-def separate_trainTest(myclass, fraction_training, startEnd):
-    num_train_songs = int(len(startEnd)*fraction_training)
-    num_train_vectors = startEnd[num_train_songs][0]
-    myclass_train = myclass[:num_train_vectors]
-    myclass_test = myclass[num_train_vectors:]
+# def separate_trainTest(myclass, fraction_training, startEnd):
+#     num_train_songs = int(len(startEnd)*fraction_training)
+#     num_train_vectors = startEnd[num_train_songs][0]
+#     myclass_train = myclass[:num_train_vectors]
+#     myclass_test = myclass[num_train_vectors:]
 
-    '''To update the intervals to be correct on the test set,
-    1) only store those that are relevant to  the test set,
-    2) Reduce all start, end points by num_train_vectors so they
-    index properly into myclass_test. '''
-    intervalsTest = startEnd[num_train_songs:]
-    for i in range(len(intervalsTest)):
-        intervalsTest[i][0]-=num_train_vectors
-        intervalsTest[i][1]-=num_train_vectors
+#     '''To update the intervals to be correct on the test set,
+#     1) only store those that are relevant to  the test set,
+#     2) Reduce all start, end points by num_train_vectors so they
+#     index properly into myclass_test. '''
+#     intervalsTest = startEnd[num_train_songs:]
+#     for i in range(len(intervalsTest)):
+#         intervalsTest[i][0]-=num_train_vectors
+#         intervalsTest[i][1]-=num_train_vectors
         
-    return myclass_train, myclass_test, intervalsTest
+#     return myclass_train, myclass_test, intervalsTest
 
-def whitenData(allGenresWindows):
-    flatWindows = []
-    for genreWindows in allGenresWindows:
-        flatWindows+= genreWindows
+# def whitenData(allGenresWindows):
+#     flatWindows = []
+#     for genreWindows in allGenresWindows:
+#         flatWindows+= genreWindows
     
-    whitened_features = whiten(np.array(flatWindows))
-    allGenresWhitened = []
-    start = 0
-    for genreWindows in allGenresWindows:
-        end = start + len(genreWindows)
-        allGenresWhitened.append(whitened_features[start:end])
-        start = end
-    return allGenresWhitened
+#     whitened_features = whiten(np.array(flatWindows))
+#     allGenresWhitened = []
+#     start = 0
+#     for genreWindows in allGenresWindows:
+#         end = start + len(genreWindows)
+#         allGenresWhitened.append(whitened_features[start:end])
+#         start = end
+#     return allGenresWhitened
 
 def run_svm(allGenresWindows, allGenresStartEnd, fraction_training, classificationMethod):
-    allGenresWhitened = whitenData(allGenresWindows)
-    classes_train = []
-    classes_test = []
-    classes_intervals = []
-    assert(len(allGenresWhitened)==len(allGenresStartEnd))
-    
-    for i in range(len(allGenresWhitened)):
-        genreWhitened = allGenresWhitened[i]
-        startEndGenre = allGenresStartEnd[i]
-        genreTrain, genreTest, intervalGenre = separate_trainTest(genreWhitened, fraction_training, startEndGenre)
-        classes_train.append(genreTrain)
-        classes_test.append(genreTest)
-        classes_intervals.append(intervalGenre)
-        
+    classes_train, classes_test, classes_intervals = separate_train_test(allGenresWindows, allGenresStartEnd, fraction_training, SHOULD_WHITEN)
     classifier = getTrainedSVM(classes_train)
     confusionMatrix = getClassifierAccuracy(classes_test, classes_intervals, classifier, classificationMethod)
     return confusionMatrix    
-            
-##    class1_train, class1_test, intervalClass1Test = separate_trainTest(whitened_class1, fraction_training, startEndClass1)
-##    class2_train, class2_test, intervalClass2Test = separate_trainTest(whitened_class2, fraction_training, startEndClass2)
-##    classifier = getTrainedSVM(class1_train, class2_train)
-##    class1_accuracy, class2_accuracy = getClassifierAccuracy(class1_test, class2_test, intervalClass1Test, intervalClass2Test, classifier, classificationMethod)
-##    return class1_accuracy, class2_accuracy
-
-    
-    
