@@ -91,8 +91,8 @@ class Song:
         
         for i in range(len(mfcc2d)):
             conf = confidences[i]
-            if conf<.6:
-                continue
+            # if conf<.6:
+            #     continue
             item = mfcc2d[i]
             confValues.append(conf)
             featureVectors.append(item)
@@ -116,6 +116,11 @@ class Song:
 
     def getStartTimes(self, f):
         startTimes = []
+        start = f['analysis']['segments_start']
+        for i in range(len(start)):
+            startTimes.append(start[i])
+        return startTimes
+
     def getGenre(self, tags):
         top5 = tags[:5]
         numjazz = 0
@@ -346,38 +351,44 @@ def main():
     # jazzsongs = pickle.load(inp)
     # inp.close()
     metalsongs, jazzsongs = getData(100)
-    metalsongsTrain = metalsongs[:numTrain]
-    jazzsongsTrain = jazzsongs[:numTrain]
-    allSongsTrain = metalsongsTrain + jazzsongsTrain
-    passedMetalVec = []
-    passedJazzVec = []
-    clusters = KMeans(allSongsTrain)
-    metalsongsTest = metalsongs[numTrain:]
-    jazzsongsTest = jazzsongs[numTrain:]
-    passedMetal = 0
-    passedJazz = 0
-    for song in metalsongsTest:
-        distance = []
-        for centroid in clusters:
-            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-            distance.append(x+y)
-        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 0):
-            passedMetal +=1 
-    print passedMetal
+    output = open('metalsongs_nofilter.pkl', 'wb')
+    pickle.dump(metalsongs, output)
+    output.close()
+    output = open('jazzsongs_nofilter.pk1', 'wb')
+    pickle.dump(jazzsongs, output)
+    output.close()
+    # metalsongsTrain = metalsongs[:numTrain]
+    # jazzsongsTrain = jazzsongs[:numTrain]
+    # allSongsTrain = metalsongsTrain + jazzsongsTrain
+    # passedMetalVec = []
+    # passedJazzVec = []
+    # clusters = KMeans(allSongsTrain)
+    # metalsongsTest = metalsongs[numTrain:]
+    # jazzsongsTest = jazzsongs[numTrain:]
+    # passedMetal = 0
+    # passedJazz = 0
+    # for song in metalsongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 0):
+    #         passedMetal +=1 
+    # print passedMetal
             
 
-    for song in jazzsongsTest:
-        distance = []
-        for centroid in clusters:
-            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-            distance.append(x+y)
-        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 1):
-            passedJazz +=1 
-    print passedJazz
+    # for song in jazzsongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 1):
+    #         passedJazz +=1 
+    # print passedJazz
 
 if __name__ == "__main__" :
     main()
