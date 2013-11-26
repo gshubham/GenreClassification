@@ -4,7 +4,7 @@ import math
 import pickle
 import numpy as np
 from copy import deepcopy
-from Song import Song
+#from Song import Song
 ## import matplotlib.pyplot as plt
 
 #segments_confidence
@@ -68,6 +68,7 @@ class Song:
             f.close()
             return
         self.featureVectors, self.confidences = self.getFeatureVectorsAndConf(f)
+        self.startTimes = self.getStartTimes(f)
         if(len(self.featureVectors) ==  0) :
             f.close()
             return
@@ -113,6 +114,8 @@ class Song:
             alltags.append(tag)
         return alltags
 
+    def getStartTimes(self, f):
+        startTimes = []
     def getGenre(self, tags):
         top5 = tags[:5]
         numjazz = 0
@@ -205,86 +208,6 @@ class Song:
         return covarianceMatrix
 
 
-def pp(index):
-    print 'jazz'
-    l = []
-    for genresong in jazzsongs[:30]:
-        l.append(genresong.avgMFCC[index])
-    l.sort()
-    print l
-
-    l = []
-    print '\nrock'
-    for genresong in rocksongs[:30]:
-        l.append(genresong.avgMFCC[index])
-    l.sort()
-    print l
-	    
-f['analysis']['segments_timbre']
-def printTags(fname):
-    
-    print fname
-    f = h5py.File(fname, 'r')
-    tags = f['metadata']['artist_terms']
-    for item in tags:
-        print item
-    print ""
-
-def getTags(fname):
-    f = h5py.File(fname, 'r')
-    tags = f['metadata']['artist_terms']
-    alltags = []
-    for tag in tags:
-        alltags.append(tag)
-    return alltags
-
-def getGenre(tags):
-    top5 = tags[:5]
-    numjazz = 0
-    numrock = 0
-    for tag in top5:
-        if 'rock' in tag:
-            numrock+=1
-        if 'jazz' in tag:
-            numjazz+=1
-
-    if numrock>=1 and numjazz==0:
-        return 'rock'
-    if numjazz>=1 and numrock==0:
-        return 'jazz'
-    return 'neither'
-    
-def getTagsAndGenre(fname):
-    tags = getTags(fname)
-    genre = getGenre(tags)
-    return tags, genre
-    
-songdir = "data/A/A/A"
-for fname in os.listdir(songdir):
-    fullname= songdir + "/"+fname
-    printTags(fullname)
-
-
- def fillSongs():
-     rocksongs = []
-     jazzsongs = []
-
-     total=0
-     songdir = "data/A/A"
-     for subdir in os.listdir(songdir):
-         for fname in os.listdir(songdir+"/"+subdir):
-             total+=1
-             if total>30:
-                 return rocksongs, jazzsongs
-             fullname = songdir+"/"+subdir+"/"+fname
-             currsong = Song(fullname)
-             if currsong.genre == 'jazz':
-                 jazzsongs.append(currsong)
-             elif currsong.genre=='rock':
-                 rocksongs.append(currsong)
-             else:
-                 assert(currsong.genre=='neither')
-     return rocksongs, jazzsongs
 
 def fillSongs(numNeeded):
     rocksongs = []
@@ -412,49 +335,52 @@ def KMeans(allSongs) :
     return clusters
 
 
-numTotal = 100
-numTrain = 85
-# inp = open('metalsongs.pk1', 'rb')
-# metalsongs = pickle.load(inp)
-# inp.close()
-# inp = open('jazzsongs.pk1', 'rb')
-# jazzsongs = pickle.load(inp)
-# inp.close()
-metalsongs, jazzsongs = getData(100)
-metalsongsTrain = metalsongs[:numTrain]
-jazzsongsTrain = jazzsongs[:numTrain]
-allSongsTrain = metalsongsTrain + jazzsongsTrain
-passedMetalVec = []
-passedJazzVec = []
-clusters = KMeans(allSongsTrain)
-metalsongsTest = metalsongs[numTrain:]
-jazzsongsTest = jazzsongs[numTrain:]
-passedMetal = 0
-passedJazz = 0
-for song in metalsongsTest:
-    distance = []
-    for centroid in clusters:
-        x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-        y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-        distance.append(x+y)
-    val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-    if(idx == 0):
-        passedMetal +=1 
-print passedMetal
-        
+def main():
 
-for song in jazzsongsTest:
-    distance = []
-    for centroid in clusters:
-        x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-        y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-        distance.append(x+y)
-    val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-    if(idx == 1):
-        passedJazz +=1 
-print passedJazz
+    numTotal = 100
+    numTrain = 85
+    # inp = open('metalsongs.pk1', 'rb')
+    # metalsongs = pickle.load(inp)
+    # inp.close()
+    # inp = open('jazzsongs.pk1', 'rb')
+    # jazzsongs = pickle.load(inp)
+    # inp.close()
+    metalsongs, jazzsongs = getData(100)
+    metalsongsTrain = metalsongs[:numTrain]
+    jazzsongsTrain = jazzsongs[:numTrain]
+    allSongsTrain = metalsongsTrain + jazzsongsTrain
+    passedMetalVec = []
+    passedJazzVec = []
+    clusters = KMeans(allSongsTrain)
+    metalsongsTest = metalsongs[numTrain:]
+    jazzsongsTest = jazzsongs[numTrain:]
+    passedMetal = 0
+    passedJazz = 0
+    for song in metalsongsTest:
+        distance = []
+        for centroid in clusters:
+            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+            distance.append(x+y)
+        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+        if(idx == 0):
+            passedMetal +=1 
+    print passedMetal
+            
 
+    for song in jazzsongsTest:
+        distance = []
+        for centroid in clusters:
+            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+            distance.append(x+y)
+        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+        if(idx == 1):
+            passedJazz +=1 
+    print passedJazz
 
+if __name__ == "__main__" :
+    main()
 
 
 # data = rocksongs[0].featureVectors
