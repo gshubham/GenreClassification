@@ -69,11 +69,16 @@ class Song:
             return
         self.featureVectors, self.confidences = self.getFeatureVectorsAndConf(f)
         self.startTimes = self.getStartTimes(f)
+        self.segments_pitches = self.getSegmentsPitch(f)
+        self.segments_start = self.getSegmentsStart(f)
+        self.segments_loudness_max = self.getSegmentsLoudnessMax(f)
+        self.segments_loudness_start = self.getSegmentsLoudnessStart(f)
         if(len(self.featureVectors) ==  0) :
             f.close()
             return
         self.meanVector = self.getMeanVector()
         self.covarianceMatrix = self.getCovarianceMatrix()
+
         f.close()
         #self.confidences = self.getConfidences(f)
         
@@ -99,6 +104,37 @@ class Song:
             
         return featureVectors, confValues
 
+    def getSegmentsPitch(self, f):
+        segments_pitch = []
+        segments_pitches = f['analysis']['segments_pitches']
+        for i in range(len(segments_pitches)):
+            segments_pitch.append(segments_pitches[i])
+
+        return segments_pitch
+
+    def getSegmentsStart(self, f):
+        segments_start = []
+        segments_startz = f['analysis']['segments_start']
+        for i in range(len(segments_startz)):
+            segments_start.append(segments_startz[i])
+
+        return segments_start
+
+    def getSegmentsLoudnessStart(self, f):
+        segments_start = []
+        segments_startz = f['analysis']['segments_loudness_start']
+        for i in range(len(segments_startz)):
+            segments_start.append(segments_startz[i])
+
+        return segments_start
+
+    def getSegmentsLoudnessMax(self, f):
+        segments_start = []
+        segments_startz = f['analysis']['segments_loudness_max']
+        for i in range(len(segments_startz)):
+            segments_start.append(segments_startz[i])
+
+        return segments_start
 ##    def getConfidences(self, f):
 ##        
 ##        confidences = f['analysis']['segments_confidence']
@@ -143,7 +179,7 @@ class Song:
                 numjazz+=1
             if 'metal' in tag:
                 nummetal+=1
-        if numjazz>=1 and nummetal==0 and numrock==0 and numhip==0 and numpop==0:
+        if nummetal>=1 and numjazz==0 and numrock==0 and numhip==0 and numpop==0:
             return 'jazz'
         if numrock>=1:
             return 'rock'
@@ -385,8 +421,8 @@ def main():
     # inp = open('rocksongs_nofilter.pkl', 'rb')
     # rocksongs = pickle.load(inp)
     # inp.close()
-    metalsongs, jazzsongs = getData(200)
-    output = open('jazzsongs_nofilter_200.pkl', 'wb')
+    metalsongs, jazzsongs = getData(100)
+    output = open('metalsongs_nofilter_100.pkl', 'wb')
     pickle.dump(jazzsongs, output)
     output.close()
     # # metalsongs, jazzsongs = getData(100)
