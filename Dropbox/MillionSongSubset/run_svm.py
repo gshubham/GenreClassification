@@ -2,9 +2,10 @@ from sklearn import svm
 from scipy.cluster.vq import whiten
 import numpy as np
 from separate_train_test import separate_train_test
+from config import *
 
-SHOULD_WHITEN = True #always whiten for svms
-KERNEL_TYPE = 'linear'
+# SHOULD_WHITEN = True #always whiten for svms
+# KERNEL_TYPE = 'linear'
 
 '''
 Input your training data and get a trained SVM.

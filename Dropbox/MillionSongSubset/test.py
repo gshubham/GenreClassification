@@ -6,16 +6,18 @@ from run_kmeans import run_kmeans
 import random
 import sys
 
-WINDOW_WIDTH_SECONDS = 1
-RANDOM_FRACTION = .05 #What portion of the song do you use-- all of it or just some?
-FRACTION_TRAINING = .7
-SVM_CLASSIFICATION_METHOD = 'majority' #'confidence #for run_svm
-KMEANS_NUM_CENTROIDS = 1
-CLASSIFIER_TYPE = "svm"
+from config import *
 
-classNames = ['metal', 'jazz', 'pop', 'hiphop', 'rock']
+# WINDOW_WIDTH_SECONDS = .01
+# RANDOM_FRACTION = .1 #What portion of the song do you use-- all of it or just some?
+# FRACTION_TRAINING = .7
+# SVM_CLASSIFICATION_METHOD = 'majority' #'confidence #for run_svm
+# KMEANS_NUM_CENTROIDS = int(sys.argv[1])#1
+# CLASSIFIER_TYPE = "kmeans"
 
-allGenresSongs = getTrainingData(classNames)
+# classNames = ['metal', 'jazz',  'hiphop','rock', 'pop']
+
+allGenresSongs = getTrainingData(GENRES_USED, NUM_TRAINING_EXAMPLES)
 
 print "Done getting training data, now extracting texture windows"
 
@@ -47,5 +49,15 @@ elif CLASSIFIER_TYPE == 'kmeans':
 else:
     assert(False), 'INVALID CLASSIFIER TYPE. (Only "svm" and "kmeans" supported.)'
 
+# print "\nGenres: ", GENRES_USED
+# print "NumCentroids", KMEANS_NUM_CENTROIDS
+
+'''Print the config variables'''
+import config
+for varname in config.__dict__.keys():
+	if varname[0:2]!="__":
+		print varname, config.__dict__[varname]
+
+print "Confusion Matrix:"
 for row in confusionMatrix:
     print row

@@ -91,8 +91,8 @@ class Song:
         
         for i in range(len(mfcc2d)):
             conf = confidences[i]
-            if conf<.6:
-                continue
+            # if conf<.6:
+            #     continue
             item = mfcc2d[i]
             confValues.append(conf)
             featureVectors.append(item)
@@ -120,8 +120,8 @@ class Song:
         start = f['analysis']['segments_start']
         for i in range(len(start)):
             conf = confidences[i]
-            if conf<.6:
-                continue
+            # if conf<.6:
+            #     continue
             startTimes.append(start[i])
         return startTimes
 
@@ -131,6 +131,7 @@ class Song:
         numrock = 0
         numhip = 0
         numpop = 0
+        nummetal = 0
         for tag in top5:
             if 'rock' in tag:
                 numrock+=1
@@ -138,12 +139,14 @@ class Song:
                 numhip+=1
             if 'pop' in tag:
                 numpop+=1
-            if 'jazz ' in tag:
+            if 'jazz' in tag:
                 numjazz+=1
-        if numrock>=1 and numjazz==0:
-            return 'rock'
-        if numpop>=1 and numrock==0 and numjazz==0 and numhip==0:
+            if 'metal' in tag:
+                nummetal+=1
+        if numjazz>=1 and nummetal==0 and numrock==0 and numhip==0 and numpop==0:
             return 'jazz'
+        if numrock>=1:
+            return 'rock'
         return 'neither'
 
     # def getGenre(self, tags):
@@ -228,41 +231,43 @@ def fillSongs(numNeeded):
     jazzsongs = []
 
     total=0
-    songdir = "data/A"
-    for subdir in os.listdir(songdir):
-        name = songdir + "/"+ subdir
-        try:
-            directory = os.listdir(name)
-            print "Directory is " , directory
-        except Exception, e:
-            print "Continuing because " + name + " is not a directory"
-            continue
-        for ssubdir in directory[:20]:
-            name2 = name+"/"+ssubdir
-            print name2
-            try :
-                print "Trying to get stuff"
-                directory2 = os.listdir(name2)
-                print "Internal directory is ", directory2
-                print len(directory2)
+    songdirtop = "data"
+    for subdirtop in os.listdir(songdirtop):
+        songdir = songdirtop + "/" + subdirtop
+        for subdir in os.listdir(songdir):
+            name = songdir + "/"+ subdir
+            try:
+                directory = os.listdir(name)
+                print "Directory is " , directory
             except Exception, e:
-                "Continuing because " + name2 + " is not a directory in 2"
+                print "Continuing because " + name + " is not a directory"
                 continue
-            for fname in directory2:
-                fpath = name2+"/"+fname
-                print fpath
-                print min(len(rocksongs), len(jazzsongs))
-                if len(rocksongs)>=numNeeded and len(jazzsongs)>=numNeeded:
-                    return rocksongs[:numNeeded], jazzsongs[:numNeeded]
-                needJazz = len(jazzsongs)<numNeeded
-                needRock = len(rocksongs)<numNeeded
-                currsong = Song(fpath, needJazz, needRock)
-                if currsong.genre == 'jazz' and needJazz:
-                    if(len(currsong.featureVectors) > 0) :
-                        jazzsongs.append(currsong)
-                elif currsong.genre=='rock' and needRock:
-                    if(len(currsong.featureVectors) > 0) :
-                        rocksongs.append(currsong)
+            for ssubdir in directory[:20]:
+                name2 = name+"/"+ssubdir
+                print name2
+                try :
+                    print "Trying to get stuff"
+                    directory2 = os.listdir(name2)
+                    print "Internal directory is ", directory2
+                    print len(directory2)
+                except Exception, e:
+                    "Continuing because " + name2 + " is not a directory in 2"
+                    continue
+                for fname in directory2:
+                    fpath = name2+"/"+fname
+                    print fpath
+                    print min(len(rocksongs), len(jazzsongs))
+                    if len(rocksongs)>=numNeeded and len(jazzsongs)>=numNeeded:
+                        return rocksongs[:numNeeded], jazzsongs[:numNeeded]
+                    needJazz = len(jazzsongs)<numNeeded
+                    needRock = len(rocksongs)<numNeeded
+                    currsong = Song(fpath, needJazz, needRock)
+                    if currsong.genre == 'jazz' and needJazz:
+                        if(len(currsong.featureVectors) > 0) :
+                            jazzsongs.append(currsong)
+                    elif currsong.genre=='rock' and needRock:
+                        if(len(currsong.featureVectors) > 0) :
+                            rocksongs.append(currsong)
                     
     return rocksongs[:numNeeded], jazzsongs[:numNeeded]
 
@@ -315,27 +320,31 @@ def getKLDivergence(meanVectorOne, meanVectorTwo, covarianceMatrixOne, covarianc
     return (math.log(determinantTwo/determinantOne) + np.trace(termTwo) + termOne[(0,0)] - 12.0)
 
 
-def KMeans(allSongs, metalsongs, jazzsongs, hiphopsongs, popsongs) :
+def KMeans(allSongs, metalsongs, jazzsongs, hiphopsongs, popsongs, rocksongs) :
     clusters = []
     clusters.append(Centroid("Centroid1"))
     clusters.append(Centroid("Centroid2"))
     clusters.append(Centroid("Centroid3"))
     clusters.append(Centroid("Centroid4"))
+    clusters.append(Centroid("Centroid5"))
     clusters[0].addtoMeanVector(metalsongs[0].meanVector)
     clusters[0].addtoCovarianceMatrix(metalsongs[0].covarianceMatrix)
-    clusters[1].addtoMeanVector(jazzsongs[1].meanVector)
-    clusters[1].addtoCovarianceMatrix(jazzsongs[1].covarianceMatrix)
+    clusters[1].addtoMeanVector(jazzsongs[0].meanVector)
+    clusters[1].addtoCovarianceMatrix(jazzsongs[0].covarianceMatrix)
     clusters[2].addtoMeanVector(hiphopsongs[0].meanVector)
     clusters[2].addtoCovarianceMatrix(hiphopsongs[0].covarianceMatrix)
     clusters[3].addtoMeanVector(popsongs[0].meanVector)
     clusters[3].addtoCovarianceMatrix(popsongs[0].covarianceMatrix)
+    clusters[4].addtoMeanVector(rocksongs[0].meanVector)
+    clusters[4].addtoCovarianceMatrix(rocksongs[0].covarianceMatrix)
     for iter in range(0, 200):
-        cumulative = [0,0,0,0]
+        cumulative = [0,0,0,0,0]
         newclusters = []
         newclusters.append(Centroid("Centroid1"))
         newclusters.append(Centroid("Centroid2"))
         newclusters.append(Centroid("Centroid3"))
         newclusters.append(Centroid("Centroid4"))
+        newclusters.append(Centroid("Centroid5"))
         for song in allSongs:
             distance = []
             for centroid in clusters:
@@ -343,7 +352,7 @@ def KMeans(allSongs, metalsongs, jazzsongs, hiphopsongs, popsongs) :
                 y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
                 if(x != 1000 and y != 1000):
                     distance.append(x+y)
-            if(len(distance) == 4) :
+            if(len(distance) == 5) :
                 val, idx = min((val, idx) for (idx, val) in enumerate(distance))
                 cumulative[idx] += 1
                 newclusters[idx].addtoMeanVector(song.meanVector)
@@ -361,19 +370,25 @@ def main():
 
     # numTotal = 100
     numTrain = 85
-    inp = open('metalsongs_filter.pkl', 'rb')
-    metalsongs = pickle.load(inp)
-    inp.close()
-    inp = open('jazzsongs_filter.pkl', 'rb')
-    jazzsongs = pickle.load(inp)
-    inp.close()
-    inp = open('popsongs_filter.pkl', 'rb')
-    popsongs = pickle.load(inp)
-    inp.close()
-    inp = open('hiphopsongs_filter.pkl', 'rb')
-    hiphopsongs = pickle.load(inp)
-    inp.close()   
-    # metalsongs, jazzsongs = getData(100)
+    # inp = open('metalsongs_filter.pkl', 'rb')
+    # metalsongs = pickle.load(inp)
+    # inp.close()
+    # inp = open('jazzsongs_filter.pkl', 'rb')
+    # jazzsongs = pickle.load(inp)
+    # inp.close()
+    # inp = open('popsongs_filter.pkl', 'rb')
+    # popsongs = pickle.load(inp)
+    # inp.close()
+    # inp = open('hiphopsongs_filter.pkl', 'rb')
+    # hiphopsongs = pickle.load(inp)
+    # inp.close()   
+    # inp = open('rocksongs_nofilter.pkl', 'rb')
+    # rocksongs = pickle.load(inp)
+    # inp.close()
+    metalsongs, jazzsongs = getData(200)
+    output = open('jazzsongs_nofilter_200.pkl', 'wb')
+    pickle.dump(jazzsongs, output)
+    output.close()
     # # metalsongs, jazzsongs = getData(100)
     # output = open('popsongs_filter_new.pkl', 'wb')
     # pickle.dump(jazzsongs, output)
@@ -383,64 +398,78 @@ def main():
     # output.close()
 
     # metalsongs, jazzsongs = getData(numTotal)
-    metalsongsTrain = metalsongs[:numTrain]
-    jazzsongsTrain = jazzsongs[:numTrain]
-    popsongsTrain = popsongs[:numTrain]
-    hiphopsongsTrain = hiphopsongs[:numTrain]
-    allSongsTrain = metalsongsTrain + jazzsongsTrain + popsongsTrain + hiphopsongsTrain
-    clusters = KMeans(allSongsTrain, metalsongs, jazzsongs, popsongs, hiphopsongs)
-    metalsongsTest = metalsongs[numTrain:]
-    jazzsongsTest = jazzsongs[numTrain:]
-    popsongsTest = popsongs[numTrain:]
-    hiphopsongsTest = hiphopsongs[numTrain:]
-    passedMetal = 0
-    passedJazz = 0
-    passedHipHop = 0
-    passedPop = 0
-    for song in metalsongsTest:
-        distance = []
-        for centroid in clusters:
-            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-            distance.append(x+y)
-        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 0):
-            passedMetal +=1 
-    print passedMetal
+    # metalsongsTrain = metalsongs[:numTrain]
+    # jazzsongsTrain = jazzsongs[:numTrain]
+    # popsongsTrain = popsongs[:numTrain]
+    # hiphopsongsTrain = hiphopsongs[:numTrain]
+    # rocksongsTrain = rocksongs[:numTrain]
+    # allSongsTrain = metalsongsTrain + jazzsongsTrain + popsongsTrain + hiphopsongsTrain + rocksongsTrain
+    # clusters = KMeans(allSongsTrain, metalsongs, jazzsongs, popsongs, hiphopsongs, rocksongs)
+    # metalsongsTest = metalsongs[numTrain:]
+    # jazzsongsTest = jazzsongs[numTrain:]
+    # popsongsTest = popsongs[numTrain:]
+    # hiphopsongsTest = hiphopsongs[numTrain:]
+    # rocksongsTest = rocksongs[numTrain:]
+    # passedMetal = 0
+    # passedJazz = 0
+    # passedHipHop = 0
+    # passedPop = 0
+    # passedRock = 0
+    # for song in metalsongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 0):
+    #         passedMetal +=1 
+    # print passedMetal
             
 
-    for song in jazzsongsTest:
-        distance = []
-        for centroid in clusters:
-            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-            distance.append(x+y)
-        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 1):
-            passedJazz +=1 
-    print passedJazz
+    # for song in jazzsongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 1):
+    #         passedJazz +=1 
+    # print passedJazz
 
-    for song in hiphopsongsTest:
-        distance = []
-        for centroid in clusters:
-            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-            distance.append(x+y)
-        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 2):
-            passedHipHop +=1 
-    print passedHipHop
+    # for song in hiphopsongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 2):
+    #         passedHipHop +=1 
+    # print passedHipHop
 
-    for song in popsongsTest:
-        distance = []
-        for centroid in clusters:
-            x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
-            y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
-            distance.append(x+y)
-        val, idx = min((val, idx) for (idx, val) in enumerate(distance))
-        if(idx == 3):
-            passedPop +=1 
-    print passedPop
+    # for song in popsongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 3):
+    #         passedPop +=1 
+    # print passedPop
+
+    # for song in rocksongsTest:
+    #     distance = []
+    #     for centroid in clusters:
+    #         x = getKLDivergence(song.meanVector, centroid.meanVector, song.covarianceMatrix, centroid.covarianceMatrix)
+    #         y = getKLDivergence(centroid.meanVector, song.meanVector, centroid.covarianceMatrix, song.covarianceMatrix)
+    #         distance.append(x+y)
+    #     val, idx = min((val, idx) for (idx, val) in enumerate(distance))
+    #     if(idx == 4):
+    #         passedRock +=1 
+    # print passedRock
 
 if __name__ == "__main__" :
     main()
